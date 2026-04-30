@@ -1,0 +1,187 @@
+---
+title: "Spotify Descriptive Statistics"
+author: "Matty"
+format: html
+editor: visual
+---
+
+## Setup
+
+```{r}
+#| message: false
+#| warning: false
+library(readxl)
+library(dplyr)
+library(car)
+library(ggplot2)
+
+sp <- read_excel("Data/spotify_stat3120.xls")
+```
+
+## Descriptive Statistics
+
+### Danceability
+
+```{r}
+dance_var <- sp$danceability
+summary(sp$danceability)
+sd(sp$danceability)
+```
+
+### Energy
+
+```{r}
+energy_var <- sp$energy
+summary(sp$energy)
+sd(sp$energy)
+```
+
+### Loudness
+
+```{r}
+clean_sp <- filter(sp, loudness < 0)
+clean_loud <- clean_sp$loudness
+summary(clean_loud)
+sd(clean_loud)
+var(clean_loud)
+```
+
+### Tempo
+
+```{r}
+tempo_var <- sp$tempo
+summary(sp$tempo)
+sd(sp$tempo)
+```
+
+## Plots
+
+### Danceability
+
+```{r}
+layout(mat = matrix(c(1,2),2,1, byrow=TRUE), height = c(1,8))
+par(mar=c(0, 3.1, 1.1, 2.1))
+boxplot(dance_var, horizontal=TRUE, ylim=c(0,1), xaxt="n",
+        col=rgb(0.8,0.8,0,0.5), frame=F)
+par(mar=c(4, 5, 1.1, 2.1))
+hist(dance_var, breaks=40, col=rgb(0.2,0.8,0.5,0.5), border=F,
+     main="", xlab="Danceability", ylab="Frequency", xlim=c(0,1))
+```
+
+### Energy
+
+```{r}
+layout(mat = matrix(c(1,2),2,1, byrow=TRUE), height = c(1,8))
+par(mar=c(0, 3.1, 1.1, 2.1))
+boxplot(energy_var, horizontal=TRUE, ylim=c(0,1), xaxt="n",
+        col=rgb(0.2, 0.4, 0.8, 0.5), frame=F)
+par(mar=c(4, 5, 1.1, 2.1))
+hist(energy_var, breaks=40, col=rgb(0.2, 0.4, 0.8, 0.8), border=F,
+     main="", xlab="Energy", ylab="Frequency", xlim=c(0,1))
+```
+
+### Loudness
+
+```{r}
+layout(mat = matrix(c(1,2),2,1, byrow=TRUE), height = c(1,8))
+par(mar=c(0, 3.1, 1.1, 2.1))
+boxplot(clean_loud, horizontal=TRUE, ylim=c(-60,0), xaxt="n",
+        col=rgb(0.2, 0.7, 0.4, 0.5), frame=F)
+par(mar=c(4, 5, 1.1, 2.1))
+hist(clean_loud, breaks=40, col=rgb(0.1, 0.5, 0.3, 0.8), border=F,
+     main="", xlab="Loudness", ylab="Frequency", xlim=c(-60,0))
+```
+
+### Tempo
+
+```{r}
+layout(mat = matrix(c(1,2),2,1, byrow=TRUE), height = c(1,8))
+par(mar=c(0, 3.1, 1.1, 2.1))
+boxplot(tempo_var, horizontal=TRUE, ylim=c(50,250), xaxt="n",
+        col=rgb(0.6, 0.3, 0.8, 0.5), frame=F)
+par(mar=c(4, 5, 1.1, 2.1))
+hist(tempo_var, breaks=40, col=rgb(0.7, 0.2, 0.6, 0.8), border=F,
+     main="", xlab="Tempo", ylab="Frequency", xlim=c(50,250))
+```
+
+## Multiple Linear Regression (predict danceability)
+
+```{r}
+lm_fit <- lm(danceability ~ loudness + tempo, data = clean_sp)
+summary(lm_fit)
+```
+
+### Diagnostics
+
+```{r}
+# Residuals vs Fitted
+plot(lm_fit, which = 1)
+```
+
+```{r}
+# Q-Q plot of residuals
+plot(lm_fit, which = 2)
+```
+
+```{r}
+# Scale-Location
+plot(lm_fit, which = 3)
+```
+
+```{r}
+# Residuals vs Leverage
+plot(lm_fit, which = 5)
+```
+
+```{r}
+# Variance Inflation Factor (multicollinearity)
+vif(lm_fit)
+```
+
+```{r}
+# Independence of residuals
+durbinWatsonTest(lm_fit)
+```
+
+```{r}
+# Normality test on residuals
+shapiro.test(residuals(lm_fit))
+```
+
+## Chi-Square Test of Independence (genre vs danceability)
+
+```{r}
+chi_sp <- filter(clean_sp, genre != "Pop")
+dance_cat <- ifelse(chi_sp$danceability > median(chi_sp$danceability),
+                    "Danceable", "Not Danceable")
+
+# Observed counts
+obs_tbl <- table(dance_cat, chi_sp$genre)
+obs_tbl
+```
+
+```{r}
+# Expected counts
+chi_res <- chisq.test(obs_tbl)
+chi_res$expected
+```
+
+```{r}
+# Genre bar charts (unfiltered vs filtered)
+ggplot(clean_sp, aes(x = genre)) +
+  geom_bar(fill = "red") +
+  ggtitle("Genre Bar Chart (Unfiltered)") +
+  xlab("Genre") + ylab("Count")
+```
+
+```{r}
+ggplot(chi_sp, aes(x = genre)) +
+  geom_bar(fill = "green") +
+  ggtitle("Genre Bar Chart (Filtered)") +
+  xlab("Genre") + ylab("Count")
+```
+
+```{r}
+# Chi-square test
+chi_res
+```
