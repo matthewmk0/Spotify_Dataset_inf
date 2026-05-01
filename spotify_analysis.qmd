@@ -8,6 +8,10 @@ editor: visual
 ## Setup
 
 ```{r}
+#install.packages(c("readxl", "dplyr", "car", "ggplot2"))
+```
+
+```{r}
 #| message: false
 #| warning: false
 library(readxl)
