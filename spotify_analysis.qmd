@@ -5,10 +5,14 @@ format: pdf
 editor: visual
 ---
 
+# STAT 3120
+
+Statistical Analysis of Spotify Dataset.
+
 ## Setup
 
 ```{r}
-#install.packages(c("readxl", "dplyr", "car", "ggplot2"))
+#install.packages(c("readxl", "dplyr", "ggplot2", "janitor", "epitools", "gt", "car"))
 ```
 
 ```{r}
@@ -16,176 +20,193 @@ editor: visual
 #| warning: false
 library(readxl)
 library(dplyr)
-library(car)
 library(ggplot2)
+library(janitor)
+library(epitools)
+library(gt)
+library(car)
+```
 
+```{r}
+# Export Dataset, substitute "path/to/file" with actual path
 sp <- read_excel("Data/spotify_stat3120.xls")
+# View(sp) # To view dataset in R
 ```
 
-## Descriptive Statistics
+# Descriptive Statistics and Cleaning
 
-### Danceability
+## Danceability (Quantitative)
 
 ```{r}
-dance_var <- sp$danceability
-summary(sp$danceability)
-sd(sp$danceability)
+dance <- sp$danceability
+summary(dance) # min 0.166, Q1 0.511, med 0.636, mea 0.629, Q3 0.754, max 0.954
+sd(dance)      # 0.159
 ```
 
-### Energy
+## Energy (Quantitative)
 
 ```{r}
-energy_var <- sp$energy
-summary(sp$energy)
-sd(sp$energy)
+energy <- sp$energy
+summary(energy) # min 0.109, Q1 0.643, med 0.823, mea 0.778, Q3 0.935, max 0.998
+sd(energy)      # 0.178
 ```
 
-### Loudness
+## Loudness (Quantitative, cleaning required)
 
 ```{r}
-clean_sp <- filter(sp, loudness < 0)
-clean_loud <- clean_sp$loudness
-summary(clean_loud)
-sd(clean_loud)
-var(clean_loud)
+clean_sp <- filter(sp, loudness < 0) # remove values greater than 0
+loud <- clean_sp$loudness
+var(loud)  # 8.166
+sd(loud)   # 2.858
+summary(loud) # min -17.912, Q1 -8.063, med -6.126, mea -6.471, Q3 -4.737, max -0.344
+remaining_loud <- (length(sp$loudness) - length(loud)) # 5 values were removed
+remaining_loud
 ```
 
-### Tempo
+## Tempo (Quantitative)
 
 ```{r}
-tempo_var <- sp$tempo
-summary(sp$tempo)
-sd(sp$tempo)
+tempo <- sp$tempo
+summary(tempo) # min 81.99, Q1 129.98, med 145.00, mea 147.22, Q3 160.18, max 220.04
+sd(tempo)      # 23.244
 ```
 
-## Plots
+## Qualitative Variables
 
-### Danceability
+```{r}
+table(sp$genre)
+# Dark Trap 43, DnB 38, Emo 20, Hardstyle 48, HipHop 38, Pop 2, Psytrance 50, Rap 17
+# RnB 20, Techhouse 44, Techno 32, Trance 40, Trap 38, Trap M 34, Underground 79.
+```
+
+## Creating DanceCat by separating Danceability by the mean
+
+```{r}
+sp$dancecat <- ifelse(sp$danceability > .629, "Danceable", "Not Danceable")
+```
+
+## Removing Pop because of low count of 2
+
+```{r}
+clean_sp <- sp %>% filter(genre != "Pop")
+```
+
+## Contingency table and expected values
+
+```{r}
+# New contingency table
+tab <- table(clean_sp$dancecat, clean_sp$genre)
+tab
+```
+
+```{r}
+# Expected values
+expected <- chisq.test(tab)$expected
+expected
+```
+
+# Graphs
+
+## Boxplot with histogram for Danceability
 
 ```{r}
 layout(mat = matrix(c(1,2),2,1, byrow=TRUE), height = c(1,8))
 par(mar=c(0, 3.1, 1.1, 2.1))
-boxplot(dance_var, horizontal=TRUE, ylim=c(0,1), xaxt="n",
+boxplot(dance, horizontal=TRUE, ylim=c(0,1), xaxt="n",
         col=rgb(0.8,0.8,0,0.5), frame=F)
 par(mar=c(4, 5, 1.1, 2.1))
-hist(dance_var, breaks=40, col=rgb(0.2,0.8,0.5,0.5), border=F,
+hist(dance, breaks=40, col=rgb(0.2,0.8,0.5,0.5), border=F,
      main="", xlab="Danceability", ylab="Frequency", xlim=c(0,1))
 ```
 
-### Energy
+## Boxplot with histogram for Energy
 
 ```{r}
 layout(mat = matrix(c(1,2),2,1, byrow=TRUE), height = c(1,8))
 par(mar=c(0, 3.1, 1.1, 2.1))
-boxplot(energy_var, horizontal=TRUE, ylim=c(0,1), xaxt="n",
+boxplot(energy, horizontal=TRUE, ylim=c(0,1), xaxt="n",
         col=rgb(0.2, 0.4, 0.8, 0.5), frame=F)
 par(mar=c(4, 5, 1.1, 2.1))
-hist(energy_var, breaks=40, col=rgb(0.2, 0.4, 0.8, 0.8), border=F,
+hist(energy, breaks=40, col=rgb(0.2, 0.4, 0.8, 0.8), border=F,
      main="", xlab="Energy", ylab="Frequency", xlim=c(0,1))
 ```
 
-### Loudness
+## Boxplot with histogram for Loudness
 
 ```{r}
 layout(mat = matrix(c(1,2),2,1, byrow=TRUE), height = c(1,8))
 par(mar=c(0, 3.1, 1.1, 2.1))
-boxplot(clean_loud, horizontal=TRUE, ylim=c(-60,0), xaxt="n",
+boxplot(loud, horizontal=TRUE, ylim=c(-30,0), xaxt="n",
         col=rgb(0.2, 0.7, 0.4, 0.5), frame=F)
 par(mar=c(4, 5, 1.1, 2.1))
-hist(clean_loud, breaks=40, col=rgb(0.1, 0.5, 0.3, 0.8), border=F,
-     main="", xlab="Loudness", ylab="Frequency", xlim=c(-60,0))
+hist(loud, breaks=40, col=rgb(0.1, 0.5, 0.3, 0.8), border=F,
+     main="", xlab="Loudness", ylab="Frequency", xlim=c(-30,0))
 ```
 
-### Tempo
+## Boxplot with histogram for Tempo
 
 ```{r}
 layout(mat = matrix(c(1,2),2,1, byrow=TRUE), height = c(1,8))
 par(mar=c(0, 3.1, 1.1, 2.1))
-boxplot(tempo_var, horizontal=TRUE, ylim=c(50,250), xaxt="n",
+boxplot(tempo, horizontal=TRUE, ylim=c(50,250), xaxt="n",
         col=rgb(0.6, 0.3, 0.8, 0.5), frame=F)
 par(mar=c(4, 5, 1.1, 2.1))
-hist(tempo_var, breaks=40, col=rgb(0.7, 0.2, 0.6, 0.8), border=F,
+hist(tempo, breaks=40, col=rgb(0.7, 0.2, 0.6, 0.8), border=F,
      main="", xlab="Tempo", ylab="Frequency", xlim=c(50,250))
 ```
 
-## Multiple Linear Regression (predict danceability)
+## Bar plot for Genre
 
 ```{r}
-lm_fit <- lm(danceability ~ loudness + tempo, data = clean_sp)
-summary(lm_fit)
-```
-
-### Diagnostics
-
-```{r}
-# Residuals vs Fitted
-plot(lm_fit, which = 1)
+ggplot(sp, aes(x = genre)) + geom_bar()
 ```
 
 ```{r}
-# Q-Q plot of residuals
-plot(lm_fit, which = 2)
+# without pop
+ggplot(clean_sp, aes(x = genre)) + geom_bar()
+```
+
+## Stacked Proportional bar chart (genre vs dance)
+
+```{r}
+ggplot(clean_sp, aes(x = genre, fill = dancecat)) +
+  geom_bar(position = "fill") +
+  labs(y = "Proportion")
+```
+
+# Statistical Tests
+
+## Test 1: Multiple Linear Regression Analysis
+
+```{r}
+# Regression Test
+model <- lm(danceability ~ loudness + tempo, data = sp)
+summary(model) # df=540, f-stat=25.09, p=3.803e-11
+```
+
+### Checking conditions
+
+```{r}
+vif(model)        # Multicollinearity check, passed bc close to 1.
 ```
 
 ```{r}
-# Scale-Location
-plot(lm_fit, which = 3)
+plot(model, which = 1) # Residual plot, passed graph looks decently centered around the middle.
 ```
 
 ```{r}
-# Residuals vs Leverage
-plot(lm_fit, which = 5)
+plot(model, which = 2) # Q-Q plot, passed no jarring signs.
+```
+
+## Test 2: Chi-Square Test of Independence
+
+```{r}
+# Verifying expected counts
+all(expected >= 5) # true, satisfied
 ```
 
 ```{r}
-# Variance Inflation Factor (multicollinearity)
-vif(lm_fit)
-```
-
-```{r}
-# Independence of residuals
-durbinWatsonTest(lm_fit)
-```
-
-```{r}
-# Normality test on residuals
-shapiro.test(residuals(lm_fit))
-```
-
-## Chi-Square Test of Independence (genre vs danceability)
-
-```{r}
-chi_sp <- filter(clean_sp, genre != "Pop")
-dance_cat <- ifelse(chi_sp$danceability > median(chi_sp$danceability),
-                    "Danceable", "Not Danceable")
-
-# Observed counts
-obs_tbl <- table(dance_cat, chi_sp$genre)
-obs_tbl
-```
-
-```{r}
-# Expected counts
-chi_res <- chisq.test(obs_tbl)
-chi_res$expected
-```
-
-```{r}
-# Genre bar charts (unfiltered vs filtered)
-ggplot(clean_sp, aes(x = genre)) +
-  geom_bar(fill = "red") +
-  ggtitle("Genre Bar Chart (Unfiltered)") +
-  xlab("Genre") + ylab("Count")
-```
-
-```{r}
-ggplot(chi_sp, aes(x = genre)) +
-  geom_bar(fill = "green") +
-  ggtitle("Genre Bar Chart (Filtered)") +
-  xlab("Genre") + ylab("Count")
-```
-
-```{r}
-# Chi-square test
-chi_res
+# Chi Square Test-of-Independence
+chi_result <- chisq.test(tab)
+chi_result # x-squared=186.87, df=13, p<2.2e-16
 ```

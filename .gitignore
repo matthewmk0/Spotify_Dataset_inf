@@ -1,0 +1,67 @@
+# History files
+.Rhistory
+.Rapp.history
+
+# Session data files
+.RData
+.RDataTmp
+
+# User-specific files
+.Ruserdata
+
+# RStudio files
+.Rproj.user/
+*.Rproj
+
+# Knitr and R Markdown cache
+*_cache/
+/cache/
+*.knit.md
+*.utf8.md
+
+# Quarto files
+/.quarto/
+*_files/
+
+# Package files
+*.tar.gz
+*.rcheck/
+
+# Output files
+*.pdf
+*.html
+*.docx
+
+# VS Code
+.vscode/
+*.code-workspace
+.history/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# macOS directory thumbnails
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# OS files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Environment variables
+.Renviron
