@@ -11,7 +11,7 @@ library(gt)
 library(car)
 
 #Export Dataset, substitute "path/to/file" with actual path
-sp <- read_excel("/Users/matty/Documents/code-projects/Stat_Classes/Inf_Stats/spotify_set/spotify_stat3120.xls")
+sp <- read_excel("path/to/file")
 View(sp) #To view dataset in R
 
 #=============descriptive stats and cleaning=============#
